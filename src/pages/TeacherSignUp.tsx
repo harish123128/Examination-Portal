@@ -1,0 +1,404 @@
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { motion } from 'framer-motion';
+import { 
+  Lock, 
+  Mail, 
+  BookOpen, 
+  Eye, 
+  EyeOff, 
+  Shield, 
+  ArrowLeft, 
+  User, 
+  Phone,
+  CheckCircle,
+  AlertCircle
+} from 'lucide-react';
+import { TeacherAuthService } from '../lib/teacherAuth';
+import toast from 'react-hot-toast';
+
+interface TeacherSignUpForm {
+  email: string;
+  password: string;
+  confirmPassword: string;
+  fullName: string;
+  phone: string;
+}
+
+const TeacherSignUp = () => {
+  const { token } = useParams<{ token: string }>();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [validating, setValidating] = useState(true);
+  const [tokenValid, setTokenValid] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const { register, handleSubmit, formState: { errors }, watch } = useForm<TeacherSignUpForm>();
+
+  const password = watch('password');
+
+  useEffect(() => {
+    if (token) {
+      validateToken();
+    }
+  }, [token]);
+
+  const validateToken = async () => {
+    if (!token) return;
+    
+    try {
+      const result = await TeacherAuthService.validateToken(token);
+      setTokenValid(result.valid);
+      if (!result.valid) {
+        toast.error(result.error || 'Invalid invitation link');
+      }
+    } catch (error) {
+      toast.error('Failed to validate invitation link');
+      setTokenValid(false);
+    } finally {
+      setValidating(false);
+    }
+  };
+
+  const onSubmit = async (data: TeacherSignUpForm) => {
+    if (!token) return;
+    
+    if (data.password !== data.confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await TeacherAuthService.createTeacherProfile({
+        token,
+        email: data.email,
+        password: data.password,
+        fullName: data.fullName,
+        phone: data.phone
+      });
+      
+      toast.success('Account created successfully! You can now sign in.');
+      navigate('/auth/signin');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to create account');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const passwordStrength = (password: string) => {
+    if (!password) return { strength: 0, label: '', color: '' };
+    
+    let strength = 0;
+    if (password.length >= 8) strength++;
+    if (/[A-Z]/.test(password)) strength++;
+    if (/[a-z]/.test(password)) strength++;
+    if (/[0-9]/.test(password)) strength++;
+    if (/[^A-Za-z0-9]/.test(password)) strength++;
+
+    const labels = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong'];
+    const colors = ['red', 'orange', 'yellow', 'blue', 'green'];
+    
+    return {
+      strength,
+      label: labels[strength - 1] || '',
+      color: colors[strength - 1] || 'gray'
+    };
+  };
+
+  const passwordInfo = passwordStrength(password || '');
+
+  if (validating) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-white">Validating invitation...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!tokenValid) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex items-center justify-center py-12 px-4">
+        <div className="max-w-md w-full">
+          <motion.div
+            className="bg-white/10 backdrop-blur-md rounded-2xl p-8 text-center border border-white/20"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6 }}
+          >
+            <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="h-8 w-8 text-red-400" />
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-4">Invalid Invitation</h2>
+            <p className="text-white/70 mb-6">
+              This invitation link is invalid or has expired. Please contact your administrator for a new invitation.
+            </p>
+            <Link
+              to="/"
+              className="inline-flex items-center text-blue-400 hover:text-blue-300 transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to home
+            </Link>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <Link
+            to="/"
+            className="flex items-center text-white/80 hover:text-white mb-8 transition-colors"
+          >
+            <ArrowLeft className="h-5 w-5 mr-2" />
+            Back to home
+          </Link>
+          
+          <div className="flex justify-center">
+            <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center">
+              <BookOpen className="h-8 w-8 text-white" />
+            </div>
+          </div>
+          <h2 className="mt-6 text-center text-3xl font-bold text-white">
+            Create Your Teacher Account
+          </h2>
+          <p className="mt-2 text-center text-sm text-white/70">
+            Complete your profile to access the examination portal
+          </p>
+        </motion.div>
+
+        {/* Security Badge */}
+        <motion.div
+          className="flex items-center justify-center"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
+          <div className="flex items-center space-x-2 bg-green-500/20 backdrop-blur-md rounded-full px-4 py-2 border border-green-500/30">
+            <Shield className="h-4 w-4 text-green-400" />
+            <span className="text-green-400 text-xs font-medium">Secure Teacher Portal</span>
+          </div>
+        </motion.div>
+
+        {/* Form */}
+        <motion.div
+          className="bg-white/10 backdrop-blur-md py-8 px-6 shadow-2xl rounded-2xl border border-white/20"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+        >
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            <div>
+              <label htmlFor="fullName" className="block text-sm font-medium text-white mb-2">
+                Full Name
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <User className="h-5 w-5 text-white/50" />
+                </div>
+                <input
+                  {...register('fullName', { required: 'Full name is required' })}
+                  type="text"
+                  className="pl-10 block w-full bg-white/10 border border-white/20 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent sm:text-sm text-white placeholder-white/50 py-3"
+                  placeholder="Enter your full name"
+                />
+                {errors.fullName && (
+                  <p className="mt-2 text-sm text-red-400">{errors.fullName.message}</p>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-white mb-2">
+                Email Address
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Mail className="h-5 w-5 text-white/50" />
+                </div>
+                <input
+                  {...register('email', {
+                    required: 'Email is required',
+                    pattern: {
+                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                      message: 'Invalid email address'
+                    }
+                  })}
+                  type="email"
+                  className="pl-10 block w-full bg-white/10 border border-white/20 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent sm:text-sm text-white placeholder-white/50 py-3"
+                  placeholder="Enter your email"
+                />
+                {errors.email && (
+                  <p className="mt-2 text-sm text-red-400">{errors.email.message}</p>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="phone" className="block text-sm font-medium text-white mb-2">
+                Phone Number
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Phone className="h-5 w-5 text-white/50" />
+                </div>
+                <input
+                  {...register('phone', { required: 'Phone number is required' })}
+                  type="tel"
+                  className="pl-10 block w-full bg-white/10 border border-white/20 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent sm:text-sm text-white placeholder-white/50 py-3"
+                  placeholder="Enter your phone number"
+                />
+                {errors.phone && (
+                  <p className="mt-2 text-sm text-red-400">{errors.phone.message}</p>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-white mb-2">
+                Password
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-white/50" />
+                </div>
+                <input
+                  {...register('password', {
+                    required: 'Password is required',
+                    minLength: {
+                      value: 8,
+                      message: 'Password must be at least 8 characters'
+                    }
+                  })}
+                  type={showPassword ? 'text' : 'password'}
+                  className="pl-10 pr-10 block w-full bg-white/10 border border-white/20 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent sm:text-sm text-white placeholder-white/50 py-3"
+                  placeholder="Create a strong password"
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5 text-white/50 hover:text-white/70" />
+                  ) : (
+                    <Eye className="h-5 w-5 text-white/50 hover:text-white/70" />
+                  )}
+                </button>
+              </div>
+              {password && (
+                <div className="mt-2">
+                  <div className="flex items-center space-x-2">
+                    <div className="flex-1 bg-white/20 rounded-full h-2">
+                      <div
+                        className={`h-2 rounded-full transition-all bg-${passwordInfo.color}-500`}
+                        style={{ width: `${(passwordInfo.strength / 5) * 100}%` }}
+                      />
+                    </div>
+                    <span className={`text-xs text-${passwordInfo.color}-400`}>
+                      {passwordInfo.label}
+                    </span>
+                  </div>
+                </div>
+              )}
+              {errors.password && (
+                <p className="mt-2 text-sm text-red-400">{errors.password.message}</p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-white mb-2">
+                Confirm Password
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-white/50" />
+                </div>
+                <input
+                  {...register('confirmPassword', {
+                    required: 'Please confirm your password',
+                    validate: value => value === password || 'Passwords do not match'
+                  })}
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  className="pl-10 pr-10 block w-full bg-white/10 border border-white/20 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent sm:text-sm text-white placeholder-white/50 py-3"
+                  placeholder="Confirm your password"
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="h-5 w-5 text-white/50 hover:text-white/70" />
+                  ) : (
+                    <Eye className="h-5 w-5 text-white/50 hover:text-white/70" />
+                  )}
+                </button>
+              </div>
+              {errors.confirmPassword && (
+                <p className="mt-2 text-sm text-red-400">{errors.confirmPassword.message}</p>
+              )}
+            </div>
+
+            <div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-xl text-white bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105"
+              >
+                {loading ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                ) : (
+                  <>
+                    <CheckCircle className="h-5 w-5 mr-2" />
+                    Create Account
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+
+          <div className="mt-6 text-center">
+            <p className="text-sm text-white/70">
+              Already have an account?{' '}
+              <Link
+                to="/auth/signin"
+                className="font-medium text-blue-400 hover:text-blue-300 transition-colors"
+              >
+                Sign in here
+              </Link>
+            </p>
+          </div>
+        </motion.div>
+
+        {/* Security Notice */}
+        <motion.div
+          className="text-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
+        >
+          <p className="text-xs text-white/50">
+            Your account will be secured with enterprise-grade encryption and monitoring.
+          </p>
+        </motion.div>
+      </div>
+    </div>
+  );
+};
+
+export default TeacherSignUp;
