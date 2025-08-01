@@ -13,7 +13,9 @@ import {
   Zap,
   AlertCircle,
   Loader,
-  CheckCircle
+  CheckCircle,
+  Activity,
+  Clock
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
@@ -28,12 +30,14 @@ const SignIn = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [performanceInfo, setPerformanceInfo] = useState<string>('');
-  const { signIn } = useAuth();
+  const [authMetrics, setAuthMetrics] = useState<Record<string, any>>({});
+  const { signIn, getPerformanceMetrics } = useAuth();
   const navigate = useNavigate();
   const { register, handleSubmit, formState: { errors }, watch } = useForm<SignInForm>({
     defaultValues: {
-      email: 'admin@example.com',
-      password: 'admin123'
+      email: '',
+      password: '',
+      rememberMe: false
     }
   });
 
@@ -44,13 +48,21 @@ const SignIn = () => {
     const startTime = Date.now();
     
     try {
-      console.log('🔐 Starting authentication for:', data.email);
+      console.log('🔐 Starting enhanced authentication for:', data.email);
       
-      await signIn({ email: data.email, password: data.password });
+      await signIn({ 
+        email: data.email, 
+        password: data.password,
+        rememberMe: data.rememberMe
+      });
       
       const duration = Date.now() - startTime;
       console.log('✅ Authentication completed in', duration, 'ms');
       setPerformanceInfo(`Signed in successfully in ${duration}ms`);
+      
+      // Get performance metrics
+      const metrics = getPerformanceMetrics();
+      setAuthMetrics(metrics);
       
       // Navigate to dashboard after successful login
       navigate('/dashboard');
@@ -104,10 +116,10 @@ const SignIn = () => {
             </div>
           </div>
           <h2 className="mt-6 text-center text-3xl font-bold text-white">
-            Administrator Login
+            Enhanced Authentication
           </h2>
           <p className="mt-2 text-center text-sm text-white/70">
-            Sign in to access the admin dashboard
+            Sign in to access your secure dashboard
           </p>
         </motion.div>
 
@@ -123,6 +135,20 @@ const SignIn = () => {
               <Zap className="h-4 w-4 mr-2" />
               {performanceInfo}
             </p>
+            {Object.keys(authMetrics).length > 0 && (
+              <div className="mt-2 text-xs text-blue-300">
+                <div className="flex items-center justify-center space-x-4">
+                  <span className="flex items-center">
+                    <Activity className="h-3 w-3 mr-1" />
+                    Avg: {authMetrics.signIn?.average || 0}ms
+                  </span>
+                  <span className="flex items-center">
+                    <Clock className="h-3 w-3 mr-1" />
+                    Cache: {authMetrics.getProfileFast?.average || 0}ms
+                  </span>
+                </div>
+              </div>
+            )}
           </motion.div>
         )}
 
@@ -135,7 +161,7 @@ const SignIn = () => {
         >
           <div className="flex items-center space-x-2 bg-green-500/20 backdrop-blur-md rounded-full px-4 py-2 border border-green-500/30">
             <Shield className="h-4 w-4 text-green-400" />
-            <span className="text-green-400 text-xs font-medium">Secure Admin Access</span>
+            <span className="text-green-400 text-xs font-medium">Enterprise Security</span>
           </div>
         </motion.div>
 
@@ -219,7 +245,7 @@ const SignIn = () => {
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-white/20 rounded bg-white/10"
                 />
                 <label htmlFor="remember-me" className="ml-2 block text-sm text-white/70">
-                  Remember me
+                  Remember me for 30 days
                 </label>
               </div>
 
@@ -242,7 +268,7 @@ const SignIn = () => {
                 {loading ? (
                   <div className="flex items-center space-x-2">
                     <Loader className="animate-spin h-5 w-5" />
-                    <span>Signing in...</span>
+                    <span>Authenticating...</span>
                   </div>
                 ) : (
                   <div className="flex items-center space-x-2">
@@ -261,7 +287,7 @@ const SignIn = () => {
                 to="/auth/signup"
                 className="font-medium text-blue-400 hover:text-blue-300 transition-colors"
               >
-                Create admin account
+                Create account
               </Link>
             </p>
           </div>
@@ -276,7 +302,7 @@ const SignIn = () => {
         >
           <div className="flex items-center justify-center mb-3">
             <AlertCircle className="h-4 w-4 text-yellow-400 mr-2" />
-            <p className="text-xs text-yellow-400 font-medium">Demo Credentials - Quick Access</p>
+            <p className="text-xs text-yellow-400 font-medium">Demo Credentials - Lightning Fast Access</p>
           </div>
           
           <div className="space-y-2">
@@ -320,10 +346,10 @@ const SignIn = () => {
         >
           <div className="flex items-center justify-center mb-2">
             <Zap className="h-4 w-4 text-green-400 mr-2" />
-            <p className="text-xs text-green-400 font-medium">Lightning Fast Authentication</p>
+            <p className="text-xs text-green-400 font-medium">Enterprise Performance</p>
           </div>
           <p className="text-xs text-white/60">
-            Optimized for speed - Login completes in under 200ms
+            ⚡ Sub-200ms authentication • 🔒 Military-grade security • 📊 Real-time monitoring
           </p>
         </motion.div>
       </div>

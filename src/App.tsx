@@ -71,25 +71,56 @@ function App() {
   );
 }
 
-// Protected Route Component
+// Enhanced Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-white">Loading...</p>
+          <div className="text-white">
+            <p className="text-lg font-medium">Loading your dashboard...</p>
+            <p className="text-sm text-white/70 mt-2">Authenticating and preparing your workspace</p>
+          </div>
         </div>
       </div>
     );
   }
 
-  return user ? <>{children}</> : <Navigate to="/auth/signin" />;
+  if (!user) {
+    console.log('No user found, redirecting to sign in');
+    return <Navigate to="/auth/signin" replace />;
+  }
+
+  if (!profile) {
+    console.log('No profile found for user:', user.id);
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900">
+        <div className="text-center">
+          <div className="text-red-400 mb-4">
+            <svg className="w-16 h-16 mx-auto" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-white mb-2">Profile Setup Required</h2>
+          <p className="text-white/70 mb-4">Your profile is being created. Please wait a moment...</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+          >
+            Refresh Page
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
 };
 
-// Dashboard Router Component
+// Enhanced Dashboard Router Component
 const DashboardRouter = () => {
   const { profile, loading } = useAuth();
   
@@ -107,26 +138,21 @@ const DashboardRouter = () => {
   }
 
   if (!profile) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900">
-        <div className="text-center">
-          <div className="text-red-400 mb-4">
-            <svg className="w-16 h-16 mx-auto" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
-          </div>
-          <h2 className="text-xl font-bold text-white mb-2">Profile Not Found</h2>
-          <p className="text-white/70 mb-4">Unable to load your profile. Please try signing in again.</p>
-          <Navigate to="/auth/signin" replace />
-        </div>
-      </div>
-    );
+    return <Navigate to="/auth/signin" replace />;
   }
 
   console.log('Routing to dashboard for role:', profile.role);
   
-  // Always route to AdminDashboard for both admin and teacher roles
-  // The AdminDashboard will handle role-based content display
+  // Route based on user role
+  if (profile.role === 'admin') {
+    return <AdminDashboard />;
+  } else if (profile.role === 'teacher') {
+    // Teachers can also access admin dashboard for now
+    // You can change this to <TeacherDashboard /> if you want separate dashboards
+    return <AdminDashboard />;
+  }
+
+  // Fallback to admin dashboard
   return <AdminDashboard />;
 };
 

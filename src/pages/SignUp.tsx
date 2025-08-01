@@ -14,7 +14,9 @@ import {
   Phone,
   CheckCircle,
   AlertTriangle,
-  UserCheck
+  UserCheck,
+  Zap,
+  Activity
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
@@ -34,11 +36,12 @@ const SignUp = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [emailExists, setEmailExists] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState(0);
   const { signUp, checkEmailExists } = useAuth();
   const navigate = useNavigate();
   const { register, handleSubmit, formState: { errors }, watch, trigger } = useForm<SignUpForm>({
     defaultValues: {
-      role: 'admin' // Default to admin for admin dashboard access
+      role: 'admin' // Default to admin for dashboard access
     }
   });
 
@@ -54,6 +57,27 @@ const SignUp = () => {
     }
   };
 
+  // Calculate password strength
+  const calculatePasswordStrength = (password: string) => {
+    if (!password) return 0;
+    
+    let strength = 0;
+    if (password.length >= 8) strength++;
+    if (/[A-Z]/.test(password)) strength++;
+    if (/[a-z]/.test(password)) strength++;
+    if (/[0-9]/.test(password)) strength++;
+    if (/[^A-Za-z0-9]/.test(password)) strength++;
+
+    setPasswordStrength(strength);
+    return strength;
+  };
+
+  React.useEffect(() => {
+    if (password) {
+      calculatePasswordStrength(password);
+    }
+  }, [password]);
+
   const onSubmit = async (data: SignUpForm) => {
     if (data.password !== data.confirmPassword) {
       toast.error('Passwords do not match');
@@ -62,6 +86,11 @@ const SignUp = () => {
 
     if (emailExists) {
       toast.error('Email already exists');
+      return;
+    }
+
+    if (passwordStrength < 3) {
+      toast.error('Password is too weak. Please use a stronger password.');
       return;
     }
 
@@ -84,27 +113,18 @@ const SignUp = () => {
     }
   };
 
-  const passwordStrength = (password: string) => {
-    if (!password) return { strength: 0, label: '', color: '' };
-    
-    let strength = 0;
-    if (password.length >= 8) strength++;
-    if (/[A-Z]/.test(password)) strength++;
-    if (/[a-z]/.test(password)) strength++;
-    if (/[0-9]/.test(password)) strength++;
-    if (/[^A-Za-z0-9]/.test(password)) strength++;
-
+  const getPasswordStrengthInfo = (strength: number) => {
     const labels = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong'];
     const colors = ['red', 'orange', 'yellow', 'blue', 'green'];
     
     return {
-      strength,
-      label: labels[strength - 1] || '',
-      color: colors[strength - 1] || 'gray'
+      label: labels[strength - 1] || 'Very Weak',
+      color: colors[strength - 1] || 'red',
+      percentage: (strength / 5) * 100
     };
   };
 
-  const passwordInfo = passwordStrength(password || '');
+  const strengthInfo = getPasswordStrengthInfo(passwordStrength);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -129,10 +149,10 @@ const SignUp = () => {
             </div>
           </div>
           <h2 className="mt-6 text-center text-3xl font-bold text-white">
-            Create Administrator Account
+            Create Your Account
           </h2>
           <p className="mt-2 text-center text-sm text-white/70">
-            Set up your admin account to access the dashboard
+            Join our secure examination platform
           </p>
         </motion.div>
 
@@ -145,7 +165,7 @@ const SignUp = () => {
         >
           <div className="flex items-center space-x-2 bg-green-500/20 backdrop-blur-md rounded-full px-4 py-2 border border-green-500/30">
             <Shield className="h-4 w-4 text-green-400" />
-            <span className="text-green-400 text-xs font-medium">Secure Admin Registration</span>
+            <span className="text-green-400 text-xs font-medium">Secure Registration</span>
           </div>
         </motion.div>
 
@@ -253,8 +273,9 @@ const SignUp = () => {
                   )}
                 </div>
                 {role === 'admin' && (
-                  <p className="mt-2 text-xs text-blue-400">
-                    ✓ Admin accounts have full dashboard access
+                  <p className="mt-2 text-xs text-blue-400 flex items-center">
+                    <Activity className="h-3 w-3 mr-1" />
+                    Admin accounts have full dashboard access
                   </p>
                 )}
               </div>
@@ -296,13 +317,16 @@ const SignUp = () => {
                     <div className="flex items-center space-x-2">
                       <div className="flex-1 bg-white/20 rounded-full h-2">
                         <div
-                          className={`h-2 rounded-full transition-all bg-${passwordInfo.color}-500`}
-                          style={{ width: `${(passwordInfo.strength / 5) * 100}%` }}
+                          className={`h-2 rounded-full transition-all bg-${strengthInfo.color}-500`}
+                          style={{ width: `${strengthInfo.percentage}%` }}
                         />
                       </div>
-                      <span className={`text-xs text-${passwordInfo.color}-400`}>
-                        {passwordInfo.label}
+                      <span className={`text-xs text-${strengthInfo.color}-400`}>
+                        {strengthInfo.label}
                       </span>
+                    </div>
+                    <div className="mt-1 text-xs text-white/60">
+                      Requirements: 8+ chars, uppercase, lowercase, number, special char
                     </div>
                   </div>
                 )}
@@ -371,7 +395,7 @@ const SignUp = () => {
             <div>
               <button
                 type="submit"
-                disabled={loading || emailExists}
+                disabled={loading || emailExists || passwordStrength < 3}
                 className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-xl text-white bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105"
               >
                 {loading ? (
@@ -379,7 +403,7 @@ const SignUp = () => {
                 ) : (
                   <>
                     <CheckCircle className="h-5 w-5 mr-2" />
-                    Create Admin Account
+                    Create Account
                   </>
                 )}
               </button>
@@ -399,19 +423,19 @@ const SignUp = () => {
           </div>
         </motion.div>
 
-        {/* Admin Access Notice */}
+        {/* Performance Notice */}
         <motion.div
-          className="text-center bg-blue-500/10 backdrop-blur-md rounded-xl p-4 border border-blue-500/20"
+          className="text-center bg-green-500/10 backdrop-blur-md rounded-xl p-4 border border-green-500/20"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.5 }}
         >
           <div className="flex items-center justify-center mb-2">
-            <UserCheck className="h-4 w-4 text-blue-400 mr-2" />
-            <p className="text-xs text-blue-400 font-medium">Administrator Dashboard Access</p>
+            <Zap className="h-4 w-4 text-green-400 mr-2" />
+            <p className="text-xs text-green-400 font-medium">Lightning Fast Registration</p>
           </div>
           <p className="text-xs text-white/60">
-            After registration, you'll be redirected to sign in and access the admin dashboard
+            After registration, you'll be redirected to sign in and access the dashboard
           </p>
         </motion.div>
       </div>

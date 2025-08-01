@@ -18,6 +18,7 @@ interface AuthContextType {
   updatePassword: (newPassword: string) => Promise<void>;
   checkEmailExists: (email: string) => Promise<boolean>;
   refreshProfile: () => Promise<void>;
+  getPerformanceMetrics: () => Record<string, any>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -41,7 +42,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const initializeAuth = async () => {
       try {
-        console.log('🔄 Initializing authentication...');
+        console.log('🔄 Initializing enhanced authentication...');
         const startTime = Date.now();
         
         // Get current session and user
@@ -57,6 +58,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (result.user) {
             console.log(`✅ User authenticated in ${duration}ms:`, result.user.email);
             console.log('👤 Profile loaded:', result.profile?.full_name);
+            
+            // Show welcome message for returning users
+            if (result.profile?.last_login) {
+              const lastLogin = new Date(result.profile.last_login);
+              const now = new Date();
+              const timeDiff = now.getTime() - lastLogin.getTime();
+              const daysDiff = Math.floor(timeDiff / (1000 * 3600 * 24));
+              
+              if (daysDiff > 0) {
+                toast.success(`Welcome back! Last login was ${daysDiff} day${daysDiff > 1 ? 's' : ''} ago.`);
+              }
+            }
           } else {
             console.log(`ℹ️ No authenticated user (${duration}ms)`);
           }
@@ -125,9 +138,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
+    // Cleanup expired data periodically
+    const cleanupInterval = setInterval(() => {
+      AuthService.cleanupExpiredData();
+    }, 5 * 60 * 1000); // Every 5 minutes
+
     return () => {
       mounted = false;
       subscription.unsubscribe();
+      clearInterval(cleanupInterval);
     };
   }, []);
 
@@ -164,6 +183,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       console.log('✅ Sign in successful');
+      
+      // Show performance metrics in development
+      if (process.env.NODE_ENV === 'development') {
+        const metrics = AuthService.getPerformanceMetrics();
+        console.table(metrics);
+      }
+      
       toast.success(`Welcome back, ${result.profile?.full_name || 'User'}!`);
     } catch (error: any) {
       console.error('❌ Sign in error:', error);
@@ -244,6 +270,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const getPerformanceMetrics = () => {
+    return AuthService.getPerformanceMetrics();
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -257,7 +287,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       resetPassword,
       updatePassword,
       checkEmailExists,
-      refreshProfile
+      refreshProfile,
+      getPerformanceMetrics
     }}>
       {children}
     </AuthContext.Provider>
