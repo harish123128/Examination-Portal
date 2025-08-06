@@ -93,7 +93,7 @@ const Home = () => {
               <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
                 <BookOpen className="h-6 w-6 text-white" />
               </div>
-              <span className="ml-3 text-xl font-bold text-white">SecureExam</span>
+              <span className="ml-3 text-xl font-bold text-white">Paperly</span>
             </motion.div>
             
             <motion.div 
@@ -135,14 +135,14 @@ const Home = () => {
           </div>
           
           <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
-            Secure Examination
+            Paperly Examination
             <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
               {' '}Portal
             </span>
           </h1>
           
           <p className="text-xl text-white/80 mb-12 max-w-3xl mx-auto leading-relaxed">
-            A military-grade secure platform for managing examination submissions with 
+            A secure platform for managing examination submissions with 
             real-time collaboration, advanced encryption, and comprehensive audit trails.
           </p>
 
@@ -238,10 +238,10 @@ const Home = () => {
           viewport={{ once: true }}
         >
           <h2 className="text-4xl font-bold text-white mb-4">
-            Powerful Features
+            Ready to Start with Paperly?
           </h2>
           <p className="text-xl text-white/70 max-w-2xl mx-auto">
-            Everything you need to manage examinations securely and efficiently.
+            Join thousands of educational institutions that trust Paperly 
           </p>
         </motion.div>
 
@@ -328,11 +328,11 @@ const Home = () => {
               <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
                 <BookOpen className="h-5 w-5 text-white" />
               </div>
-              <span className="ml-2 text-lg font-bold text-white">SecureExam</span>
+              <span className="ml-2 text-lg font-bold text-white">Paperly</span>
             </div>
             
             <div className="text-white/60 text-sm">
-              © 2024 SecureExam. All rights reserved. Built with enterprise-grade security.
+              © 2024 Paperly. All rights reserved. Built with enterprise-grade security.
             </div>
           </div>
         </div>

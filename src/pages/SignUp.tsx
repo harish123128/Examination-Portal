@@ -149,10 +149,10 @@ const SignUp = () => {
             </div>
           </div>
           <h2 className="mt-6 text-center text-3xl font-bold text-white">
-            Create Your Account
+            Join Paperly
           </h2>
           <p className="mt-2 text-center text-sm text-white/70">
-            Join our secure examination platform
+            Create your Paperly account
           </p>
         </motion.div>
 
@@ -165,7 +165,7 @@ const SignUp = () => {
         >
           <div className="flex items-center space-x-2 bg-green-500/20 backdrop-blur-md rounded-full px-4 py-2 border border-green-500/30">
             <Shield className="h-4 w-4 text-green-400" />
-            <span className="text-green-400 text-xs font-medium">Secure Registration</span>
+            <span className="text-green-400 text-xs font-medium">Paperly Registration</span>
           </div>
         </motion.div>
 
@@ -216,7 +216,7 @@ const SignUp = () => {
                     })}
                     type="email"
                     className="pl-10 block w-full bg-white/10 border border-white/20 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent sm:text-sm text-white placeholder-white/50 py-3"
-                    placeholder="Enter your email"
+                    placeholder="your@paperly.com"
                     onBlur={(e) => checkEmail(e.target.value)}
                   />
                   {emailExists && (
@@ -245,7 +245,7 @@ const SignUp = () => {
                     {...register('phone', { required: 'Phone number is required' })}
                     type="tel"
                     className="pl-10 block w-full bg-white/10 border border-white/20 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent sm:text-sm text-white placeholder-white/50 py-3"
-                    placeholder="Enter your phone number"
+                    placeholder="+1 (555) 123-4567"
                   />
                   {errors.phone && (
                     <p className="mt-2 text-sm text-red-400">{errors.phone.message}</p>
@@ -275,7 +275,7 @@ const SignUp = () => {
                 {role === 'admin' && (
                   <p className="mt-2 text-xs text-blue-400 flex items-center">
                     <Activity className="h-3 w-3 mr-1" />
-                    Admin accounts have full dashboard access
+                    Admin accounts have full Paperly access
                   </p>
                 )}
               </div>
@@ -298,7 +298,7 @@ const SignUp = () => {
                     })}
                     type={showPassword ? 'text' : 'password'}
                     className="pl-10 pr-10 block w-full bg-white/10 border border-white/20 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent sm:text-sm text-white placeholder-white/50 py-3"
-                    placeholder="Create a strong password"
+                    placeholder="Create secure password"
                   />
                   <button
                     type="button"
@@ -403,7 +403,7 @@ const SignUp = () => {
                 ) : (
                   <>
                     <CheckCircle className="h-5 w-5 mr-2" />
-                    Create Account
+                    Create Paperly Account
                   </>
                 )}
               </button>
@@ -432,10 +432,10 @@ const SignUp = () => {
         >
           <div className="flex items-center justify-center mb-2">
             <Zap className="h-4 w-4 text-green-400 mr-2" />
-            <p className="text-xs text-green-400 font-medium">Lightning Fast Registration</p>
+            <p className="text-xs text-green-400 font-medium">Paperly Registration</p>
           </div>
           <p className="text-xs text-white/60">
-            After registration, you'll be redirected to sign in and access the dashboard
+            After registration, you'll be redirected to sign in and access Paperly
           </p>
         </motion.div>
       </div>
