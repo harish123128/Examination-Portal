@@ -16,6 +16,7 @@ export interface Profile {
   login_count: number;
   failed_login_attempts: number;
   locked_until?: string;
+  password_changed_at?: string;
   preferences: Record<string, any>;
   metadata: Record<string, any>;
   created_at: string;
@@ -51,7 +52,7 @@ export interface SecurityEvent {
   risk_score?: number;
 }
 
-export class AuthService {
+export class PaperlyAuth {
   private static profileCache = new Map<string, { profile: Profile; expires: number }>();
   private static sessionCache = new Map<string, { session: Session; expires: number }>();
   private static performanceMetrics = new Map<string, number[]>();
@@ -62,7 +63,7 @@ export class AuthService {
     return () => {
       const duration = Date.now() - startTime;
       this.recordMetric(operation, duration);
-      console.log(`🔥 ${operation} completed in ${duration}ms`);
+      console.log(`🚀 Paperly ${operation} completed in ${duration}ms`);
     };
   }
 
@@ -119,7 +120,7 @@ export class AuthService {
     const endTimer = this.startTimer('signIn');
     
     try {
-      console.log('🔐 Starting enhanced authentication for:', data.email);
+      console.log('🔐 Paperly: Starting enhanced authentication for:', data.email);
       
       const clientInfo = await this.getClientInfo();
       
@@ -194,7 +195,7 @@ export class AuthService {
       };
     } catch (error: any) {
       endTimer();
-      console.error('❌ Authentication failed:', error);
+      console.error('❌ Paperly authentication failed:', error);
       
       return {
         user: null,
@@ -210,7 +211,7 @@ export class AuthService {
     const endTimer = this.startTimer('signUp');
     
     try {
-      console.log('📝 Starting enhanced registration for:', data.email);
+      console.log('📝 Paperly: Starting enhanced registration for:', data.email);
       
       const clientInfo = await this.getClientInfo();
 
@@ -266,7 +267,7 @@ export class AuthService {
       };
     } catch (error: any) {
       endTimer();
-      console.error('❌ Registration failed:', error);
+      console.error('❌ Paperly registration failed:', error);
       
       return {
         user: null,
@@ -283,11 +284,11 @@ export class AuthService {
       // Check cache first
       const cached = this.profileCache.get(userId);
       if (cached && Date.now() < cached.expires) {
-        console.log('📋 Profile loaded from cache');
+        console.log('📋 Paperly: Profile loaded from cache');
         return cached.profile;
       }
 
-      console.log('🔍 Loading profile from database');
+      console.log('🔍 Paperly: Loading profile from database');
       const startTime = Date.now();
 
       const { data, error } = await supabase.rpc('get_profile_fast', {
@@ -310,7 +311,7 @@ export class AuthService {
         }
 
         const duration = Date.now() - startTime;
-        console.log(`📋 Profile loaded via fallback in ${duration}ms`);
+        console.log(`📋 Paperly: Profile loaded via fallback in ${duration}ms`);
         
         // Cache the result
         this.profileCache.set(userId, {
@@ -327,7 +328,7 @@ export class AuthService {
       }
 
       const duration = Date.now() - startTime;
-      console.log(`📋 Profile loaded from database in ${duration}ms`);
+      console.log(`📋 Paperly: Profile loaded from database in ${duration}ms`);
 
       // Cache the result
       this.profileCache.set(userId, {

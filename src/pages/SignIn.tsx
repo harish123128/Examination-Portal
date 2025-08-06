@@ -112,14 +112,14 @@ const SignIn = () => {
           
           <div className="flex justify-center">
             <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center">
-              <BookOpen className="h-8 w-8 text-white" />
+              <span className="text-green-400 text-xs font-medium">Paperly Security</span>
             </div>
           </div>
           <h2 className="mt-6 text-center text-3xl font-bold text-white">
-            Enhanced Authentication
+            Welcome to Paperly
           </h2>
           <p className="mt-2 text-center text-sm text-white/70">
-            Sign in to access your secure dashboard
+            Sign in to access your examination portal
           </p>
         </motion.div>
 
@@ -191,7 +191,7 @@ const SignIn = () => {
                   })}
                   type="email"
                   className="pl-10 block w-full bg-white/10 border border-white/20 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent sm:text-sm text-white placeholder-white/50 py-3"
-                  placeholder="Enter your email"
+                  placeholder="admin@paperly.com"
                 />
                 {errors.email && (
                   <p className="mt-2 text-sm text-red-400">{errors.email.message}</p>
@@ -217,7 +217,7 @@ const SignIn = () => {
                   })}
                   type={showPassword ? 'text' : 'password'}
                   className="pl-10 pr-10 block w-full bg-white/10 border border-white/20 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent sm:text-sm text-white placeholder-white/50 py-3"
-                  placeholder="Enter your password"
+                  placeholder="admin123"
                 />
                 <button
                   type="button"
@@ -273,7 +273,7 @@ const SignIn = () => {
                 ) : (
                   <div className="flex items-center space-x-2">
                     <Shield className="h-5 w-5" />
-                    <span>Sign in to Dashboard</span>
+                    <span>Sign in to Paperly</span>
                   </div>
                 )}
               </button>
@@ -285,10 +285,10 @@ const SignIn = () => {
               Don't have an account?{' '}
               <Link
                 to="/auth/signup"
-                className="font-medium text-blue-400 hover:text-blue-300 transition-colors"
+              <p className="text-xs text-green-400 font-medium">Paperly Performance</p>
               >
                 Create account
-              </Link>
+              ⚡ Sub-200ms authentication • 🔒 Enterprise security • 📊 Real-time monitoring
             </p>
           </div>
         </motion.div>
@@ -307,7 +307,7 @@ const SignIn = () => {
           
           <div className="space-y-2">
             <button
-              onClick={() => handleDemoLogin('admin@example.com', 'admin123', 'Admin')}
+              onClick={() => handleDemoLogin('admin@paperly.com', 'admin123', 'Admin')}
               disabled={loading}
               className="w-full text-xs text-white/70 hover:text-white bg-white/5 hover:bg-white/10 px-3 py-2 rounded-lg transition-colors border border-white/10 disabled:opacity-50 flex items-center justify-center space-x-2"
             >
@@ -316,12 +316,12 @@ const SignIn = () => {
               ) : (
                 <>
                   <CheckCircle className="h-3 w-3 text-green-400" />
-                  <span>Admin: admin@example.com / admin123</span>
+                  <span>Admin: admin@paperly.com / admin123</span>
                 </>
               )}
             </button>
             <button
-              onClick={() => handleDemoLogin('teacher@example.com', 'teacher123', 'Teacher')}
+              onClick={() => handleDemoLogin('teacher@paperly.com', 'teacher123', 'Teacher')}
               disabled={loading}
               className="w-full text-xs text-white/70 hover:text-white bg-white/5 hover:bg-white/10 px-3 py-2 rounded-lg transition-colors border border-white/10 disabled:opacity-50 flex items-center justify-center space-x-2"
             >
@@ -330,7 +330,7 @@ const SignIn = () => {
               ) : (
                 <>
                   <CheckCircle className="h-3 w-3 text-blue-400" />
-                  <span>Teacher: teacher@example.com / teacher123</span>
+                  <span>Teacher: teacher@paperly.com / teacher123</span>
                 </>
               )}
             </button>

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
-import { AuthService } from '../lib/auth';
+import { PaperlyAuth } from '../lib/auth';
 import type { Profile, SignUpData, SignInData } from '../lib/auth';
 import toast from 'react-hot-toast';
 
@@ -42,11 +42,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const initializeAuth = async () => {
       try {
-        console.log('🔄 Initializing enhanced authentication...');
+        console.log('🔄 Initializing Paperly authentication...');
         const startTime = Date.now();
         
         // Get current session and user
-        const result = await AuthService.getCurrentUser();
+        const result = await PaperlyAuth.getCurrentUser();
         
         if (mounted) {
           setUser(result.user);
@@ -56,8 +56,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const duration = Date.now() - startTime;
           
           if (result.user) {
-            console.log(`✅ User authenticated in ${duration}ms:`, result.user.email);
-            console.log('👤 Profile loaded:', result.profile?.full_name);
+            console.log(`✅ Paperly user authenticated in ${duration}ms:`, result.user.email);
+            console.log('👤 Paperly profile loaded:', result.profile?.full_name);
             
             // Show welcome message for returning users
             if (result.profile?.last_login) {
@@ -102,7 +102,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (session?.user) {
           // Load profile for authenticated user
-          const profile = await AuthService.getProfileFast(session.user.id);
+          const profile = await PaperlyAuth.getProfileFast(session.user.id);
           if (mounted) {
             setProfile(profile);
           }
@@ -115,14 +115,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Handle specific auth events
         switch (event) {
           case 'SIGNED_IN':
-            console.log('✅ User signed in successfully');
+            console.log('✅ Paperly user signed in successfully');
             break;
           case 'SIGNED_OUT':
-            console.log('👋 User signed out');
-            AuthService.clearCache();
+            console.log('👋 Paperly user signed out');
+            PaperlyAuth.clearCache();
             break;
           case 'TOKEN_REFRESHED':
-            console.log('🔄 Token refreshed');
+            console.log('🔄 Paperly token refreshed');
             break;
           case 'PASSWORD_RECOVERY':
             toast.success('Password recovery email sent!');
@@ -140,7 +140,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Cleanup expired data periodically
     const cleanupInterval = setInterval(() => {
-      AuthService.cleanupExpiredData();
+      PaperlyAuth.cleanupExpiredData();
     }, 5 * 60 * 1000); // Every 5 minutes
 
     return () => {
@@ -154,7 +154,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(true);
     
     try {
-      const result = await AuthService.signUp(data);
+      const result = await PaperlyAuth.signUp(data);
       
       if (result.error) {
         throw new Error(result.error);
@@ -174,9 +174,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(true);
     
     try {
-      console.log('🔐 Attempting to sign in with:', data.email);
+      console.log('🔐 Paperly attempting to sign in with:', data.email);
       
-      const result = await AuthService.signIn(data);
+      const result = await PaperlyAuth.signIn(data);
       
       if (result.error) {
         throw new Error(result.error);
@@ -186,7 +186,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Show performance metrics in development
       if (process.env.NODE_ENV === 'development') {
-        const metrics = AuthService.getPerformanceMetrics();
+        const metrics = PaperlyAuth.getPerformanceMetrics();
         console.table(metrics);
       }
       
@@ -204,7 +204,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(true);
     
     try {
-      await AuthService.signOut();
+      await PaperlyAuth.signOut();
       setProfile(null);
       toast.success('Successfully signed out!');
     } catch (error: any) {
@@ -217,7 +217,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateProfile = async (updates: Partial<Profile>) => {
     try {
-      const updatedProfile = await AuthService.updateProfile(updates);
+      const updatedProfile = await PaperlyAuth.updateProfile(updates);
       if (updatedProfile) {
         setProfile(updatedProfile);
       }
@@ -230,7 +230,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const resetPassword = async (email: string) => {
     try {
-      await AuthService.resetPassword(email);
+      await PaperlyAuth.resetPassword(email);
       toast.success('Password reset email sent!');
     } catch (error: any) {
       toast.error(error.message || 'Failed to send reset email');
@@ -240,7 +240,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updatePassword = async (newPassword: string) => {
     try {
-      await AuthService.updatePassword(newPassword);
+      await PaperlyAuth.updatePassword(newPassword);
       toast.success('Password updated successfully!');
     } catch (error: any) {
       toast.error(error.message || 'Failed to update password');
@@ -250,7 +250,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const checkEmailExists = async (email: string): Promise<boolean> => {
     try {
-      return await AuthService.checkEmailExists(email);
+      return await PaperlyAuth.checkEmailExists(email);
     } catch (error) {
       console.error('Error checking email:', error);
       return false;
@@ -261,8 +261,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       if (user) {
         // Clear cache and reload
-        AuthService.clearCache();
-        const profile = await AuthService.getProfileFast(user.id);
+        PaperlyAuth.clearCache();
+        const profile = await PaperlyAuth.getProfileFast(user.id);
         setProfile(profile);
       }
     } catch (error) {
@@ -271,7 +271,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const getPerformanceMetrics = () => {
-    return AuthService.getPerformanceMetrics();
+    return PaperlyAuth.getPerformanceMetrics();
   };
 
   return (
