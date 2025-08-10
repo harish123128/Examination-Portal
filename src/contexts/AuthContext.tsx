@@ -1,24 +1,17 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
-import { PaperlyAuth } from '../lib/auth';
-import type { Profile, SignUpData, SignInData } from '../lib/auth';
+import { authAPI, setTokens, clearTokens, getTokens, type User, type LoginData, type RegisterData } from '../lib/api';
 import toast from 'react-hot-toast';
 
 interface AuthContextType {
   user: User | null;
-  profile: Profile | null;
-  session: Session | null;
   loading: boolean;
-  signUp: (data: SignUpData) => Promise<void>;
-  signIn: (data: SignInData) => Promise<void>;
-  signOut: () => Promise<void>;
-  updateProfile: (updates: Partial<Profile>) => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
-  updatePassword: (newPassword: string) => Promise<void>;
-  checkEmailExists: (email: string) => Promise<boolean>;
-  refreshProfile: () => Promise<void>;
-  getPerformanceMetrics: () => Record<string, any>;
+  isAuthenticated: boolean;
+  login: (data: LoginData) => Promise<void>;
+  register: (data: RegisterData) => Promise<void>;
+  logout: () => Promise<void>;
+  updateProfile: (data: Partial<User>) => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -33,262 +26,182 @@ export const useAuth = () => {
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const isAuthenticated = !!user;
+
+  // Initialize auth state
   useEffect(() => {
-    let mounted = true;
-
-    const initializeAuth = async () => {
-      try {
-        console.log('🔄 Initializing Paperly authentication...');
-        const startTime = Date.now();
-        
-        // Get current session and user
-        const result = await PaperlyAuth.getCurrentUser();
-        
-        if (mounted) {
-          setUser(result.user);
-          setProfile(result.profile);
-          setSession(result.session);
-          
-          const duration = Date.now() - startTime;
-          
-          if (result.user) {
-            console.log(`✅ Paperly user authenticated in ${duration}ms:`, result.user.email);
-            console.log('👤 Paperly profile loaded:', result.profile?.full_name);
-            
-            // Show welcome message for returning users
-            if (result.profile?.last_login) {
-              const lastLogin = new Date(result.profile.last_login);
-              const now = new Date();
-              const timeDiff = now.getTime() - lastLogin.getTime();
-              const daysDiff = Math.floor(timeDiff / (1000 * 3600 * 24));
-              
-              if (daysDiff > 0) {
-                toast.success(`Welcome back! Last login was ${daysDiff} day${daysDiff > 1 ? 's' : ''} ago.`);
-              }
-            }
-          } else {
-            console.log(`ℹ️ No authenticated user (${duration}ms)`);
-          }
-        }
-      } catch (error) {
-        console.error('❌ Auth initialization error:', error);
-        if (mounted) {
-          setUser(null);
-          setProfile(null);
-          setSession(null);
-        }
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
-      }
-    };
-
     initializeAuth();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (!mounted) return;
-
-        console.log('🔄 Auth state changed:', event, session?.user?.email);
-        
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          // Load profile for authenticated user
-          const profile = await PaperlyAuth.getProfileFast(session.user.id);
-          if (mounted) {
-            setProfile(profile);
-          }
-        } else {
-          if (mounted) {
-            setProfile(null);
-          }
-        }
-
-        // Handle specific auth events
-        switch (event) {
-          case 'SIGNED_IN':
-            console.log('✅ Paperly user signed in successfully');
-            break;
-          case 'SIGNED_OUT':
-            console.log('👋 Paperly user signed out');
-            PaperlyAuth.clearCache();
-            break;
-          case 'TOKEN_REFRESHED':
-            console.log('🔄 Paperly token refreshed');
-            break;
-          case 'PASSWORD_RECOVERY':
-            toast.success('Password recovery email sent!');
-            break;
-          case 'USER_UPDATED':
-            toast.success('Profile updated successfully!');
-            break;
-        }
-
-        if (mounted) {
-          setLoading(false);
-        }
-      }
-    );
-
-    // Cleanup expired data periodically
-    const cleanupInterval = setInterval(() => {
-      PaperlyAuth.cleanupExpiredData();
-    }, 5 * 60 * 1000); // Every 5 minutes
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-      clearInterval(cleanupInterval);
-    };
   }, []);
 
-  const signUp = async (data: SignUpData) => {
-    setLoading(true);
-    
+  const initializeAuth = async () => {
     try {
-      const result = await PaperlyAuth.signUp(data);
+      const { accessToken } = getTokens();
       
-      if (result.error) {
-        throw new Error(result.error);
+      if (!accessToken) {
+        setLoading(false);
+        return;
       }
+
+      // Try to get user profile
+      const response = await authAPI.getProfile();
       
-      toast.success('Account created successfully! Please check your email to verify your account.');
+      if (response.success && response.data) {
+        setUser(response.data.user);
+        console.log('✅ User authenticated:', response.data.user.email);
+      } else {
+        clearTokens();
+      }
     } catch (error: any) {
-      console.error('Sign up error:', error);
-      toast.error(error.message || 'Sign up failed');
-      throw error;
+      console.error('Auth initialization error:', error);
+      clearTokens();
     } finally {
       setLoading(false);
     }
   };
 
-  const signIn = async (data: SignInData) => {
-    setLoading(true);
-    
+  const login = async (data: LoginData) => {
     try {
-      console.log('🔐 Paperly attempting to sign in with:', data.email);
+      setLoading(true);
       
-      const result = await PaperlyAuth.signIn(data);
+      const response = await authAPI.login(data);
       
-      if (result.error) {
-        throw new Error(result.error);
+      if (response.success && response.data) {
+        const { user, tokens } = response.data;
+        
+        // Store tokens
+        setTokens(tokens.accessToken, tokens.refreshToken);
+        
+        // Set user
+        setUser(user);
+        
+        toast.success(`Welcome back, ${user.fullName}!`);
+        console.log('✅ Login successful:', user.email);
+      } else {
+        throw new Error(response.message || 'Login failed');
       }
-      
-      console.log('✅ Sign in successful');
-      
-      // Show performance metrics in development
-      if (process.env.NODE_ENV === 'development') {
-        const metrics = PaperlyAuth.getPerformanceMetrics();
-        console.table(metrics);
-      }
-      
-      toast.success(`Welcome back, ${result.profile?.full_name || 'User'}!`);
     } catch (error: any) {
-      console.error('❌ Sign in error:', error);
-      toast.error(error.message || 'Sign in failed');
-      throw error;
+      const message = error.response?.data?.message || error.message || 'Login failed';
+      toast.error(message);
+      throw new Error(message);
     } finally {
       setLoading(false);
     }
   };
 
-  const signOut = async () => {
-    setLoading(true);
-    
+  const register = async (data: RegisterData) => {
     try {
-      await PaperlyAuth.signOut();
-      setProfile(null);
-      toast.success('Successfully signed out!');
+      setLoading(true);
+      
+      const response = await authAPI.register(data);
+      
+      if (response.success && response.data) {
+        const { user, tokens } = response.data;
+        
+        // Store tokens
+        setTokens(tokens.accessToken, tokens.refreshToken);
+        
+        // Set user
+        setUser(user);
+        
+        toast.success(`Welcome to Paperly, ${user.fullName}!`);
+        console.log('✅ Registration successful:', user.email);
+      } else {
+        throw new Error(response.message || 'Registration failed');
+      }
     } catch (error: any) {
-      toast.error(error.message || 'Sign out failed');
-      throw error;
+      const message = error.response?.data?.message || error.message || 'Registration failed';
+      toast.error(message);
+      throw new Error(message);
     } finally {
       setLoading(false);
     }
   };
 
-  const updateProfile = async (updates: Partial<Profile>) => {
+  const logout = async () => {
     try {
-      const updatedProfile = await PaperlyAuth.updateProfile(updates);
-      if (updatedProfile) {
-        setProfile(updatedProfile);
+      setLoading(true);
+      
+      // Call logout API
+      await authAPI.logout();
+      
+      // Clear tokens and user
+      clearTokens();
+      setUser(null);
+      
+      toast.success('Logged out successfully');
+      console.log('✅ Logout successful');
+    } catch (error: any) {
+      console.error('Logout error:', error);
+      // Clear tokens anyway
+      clearTokens();
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateProfile = async (data: Partial<User>) => {
+    try {
+      const response = await authAPI.updateProfile(data);
+      
+      if (response.success && response.data) {
+        setUser(response.data.user);
+        toast.success('Profile updated successfully');
+      } else {
+        throw new Error(response.message || 'Update failed');
       }
-      toast.success('Profile updated successfully!');
     } catch (error: any) {
-      toast.error(error.message || 'Failed to update profile');
-      throw error;
+      const message = error.response?.data?.message || error.message || 'Update failed';
+      toast.error(message);
+      throw new Error(message);
     }
   };
 
-  const resetPassword = async (email: string) => {
+  const changePassword = async (currentPassword: string, newPassword: string) => {
     try {
-      await PaperlyAuth.resetPassword(email);
-      toast.success('Password reset email sent!');
+      const response = await authAPI.changePassword(currentPassword, newPassword);
+      
+      if (response.success) {
+        toast.success('Password changed successfully. Please login again.');
+        
+        // Clear tokens and user (force re-login)
+        clearTokens();
+        setUser(null);
+      } else {
+        throw new Error(response.message || 'Password change failed');
+      }
     } catch (error: any) {
-      toast.error(error.message || 'Failed to send reset email');
-      throw error;
+      const message = error.response?.data?.message || error.message || 'Password change failed';
+      toast.error(message);
+      throw new Error(message);
     }
   };
 
-  const updatePassword = async (newPassword: string) => {
+  const refreshUser = async () => {
     try {
-      await PaperlyAuth.updatePassword(newPassword);
-      toast.success('Password updated successfully!');
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to update password');
-      throw error;
-    }
-  };
-
-  const checkEmailExists = async (email: string): Promise<boolean> => {
-    try {
-      return await PaperlyAuth.checkEmailExists(email);
+      const response = await authAPI.getProfile();
+      
+      if (response.success && response.data) {
+        setUser(response.data.user);
+      }
     } catch (error) {
-      console.error('Error checking email:', error);
-      return false;
+      console.error('Refresh user error:', error);
     }
-  };
-
-  const refreshProfile = async () => {
-    try {
-      if (user) {
-        // Clear cache and reload
-        PaperlyAuth.clearCache();
-        const profile = await PaperlyAuth.getProfileFast(user.id);
-        setProfile(profile);
-      }
-    } catch (error) {
-      console.error('Error refreshing profile:', error);
-    }
-  };
-
-  const getPerformanceMetrics = () => {
-    return PaperlyAuth.getPerformanceMetrics();
   };
 
   return (
     <AuthContext.Provider value={{
       user,
-      profile,
-      session,
       loading,
-      signUp,
-      signIn,
-      signOut,
+      isAuthenticated,
+      login,
+      register,
+      logout,
       updateProfile,
-      resetPassword,
-      updatePassword,
-      checkEmailExists,
-      refreshProfile,
-      getPerformanceMetrics
+      changePassword,
+      refreshUser
     }}>
       {children}
     </AuthContext.Provider>
