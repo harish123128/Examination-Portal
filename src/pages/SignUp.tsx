@@ -19,11 +19,15 @@ import {
   Activity
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import type { SignUpData } from '../lib/auth';
 import toast from 'react-hot-toast';
 
-interface SignUpForm extends SignUpData {
+interface SignUpForm {
+  email: string;
+  password: string;
   confirmPassword: string;
+  fullName: string;
+  phone: string;
+  role: 'admin' | 'teacher';
   terms: boolean;
 }
 

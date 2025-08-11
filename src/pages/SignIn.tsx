@@ -14,19 +14,19 @@ import {
   Zap
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import type { SignInData } from '../lib/auth';
+import type { LoginData } from '../lib/api';
 
 const SignIn = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const { signIn } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
-  const { register, handleSubmit, formState: { errors } } = useForm<SignInData>();
+  const { register, handleSubmit, formState: { errors } } = useForm<LoginData>();
 
-  const onSubmit = async (data: SignInData) => {
+  const onSubmit = async (data: LoginData) => {
     setLoading(true);
     try {
-      await signIn(data);
+      await login(data);
       navigate('/dashboard');
     } catch (error) {
       // Error is already handled in AuthContext
@@ -74,7 +74,7 @@ const SignIn = () => {
         >
           <div className="flex items-center space-x-2 bg-green-500/20 backdrop-blur-md rounded-full px-4 py-2 border border-green-500/30">
             <Shield className="h-4 w-4 text-green-400" />
-            <span className="text-green-400 text-xs font-medium">Secure Authentication</span>
+            <span className="text-green-400 text-xs font-medium">JWT Secure Authentication</span>
           </div>
         </motion.div>
 
