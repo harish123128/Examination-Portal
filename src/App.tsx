@@ -2,7 +2,6 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { RealtimeProvider } from './contexts/RealtimeContext';
 
 // Pages
 import Home from './pages/Home';
@@ -19,7 +18,6 @@ import TeacherSubmission from './pages/TeacherSubmission';
 function App() {
   return (
     <AuthProvider>
-      <RealtimeProvider>
         <Router>
           <div className="min-h-screen bg-gray-50">
             <Routes>
@@ -66,7 +64,6 @@ function App() {
             />
           </div>
         </Router>
-      </RealtimeProvider>
     </AuthProvider>
   );
 }
@@ -147,8 +144,6 @@ const DashboardRouter = () => {
   if (profile.role === 'admin') {
     return <AdminDashboard />;
   } else if (profile.role === 'teacher') {
-    // Teachers can also access admin dashboard for now
-    // You can change this to <TeacherDashboard /> if you want separate dashboards
     return <AdminDashboard />;
   }
 
